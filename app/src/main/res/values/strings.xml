@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">SortFoto</string>
+
+    <string name="sort_photos_title">Sort Camera Photos Chronologically</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="sort_button_label">Sort it!</string>
+    <string name="action_settings">Settings</string>
+</resources>
