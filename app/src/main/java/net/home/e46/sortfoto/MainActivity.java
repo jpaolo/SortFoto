@@ -29,28 +29,38 @@ public class MainActivity extends AppCompatActivity {
         sortButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String cameraImageLocation = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString() + "/Camera";
+                String dcmiLocation = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
+                // dirty workaround for external sd card
+                dcmiLocation = dcmiLocation.replace("emulated/0", "extSdCard");
+                String cameraImageLocation = dcmiLocation + "/Camera";
                 Log.d(SORT_FOTO, "cameraImageLocation=" + cameraImageLocation);
                 File dir = new File(cameraImageLocation);
+                int count = 0;
                 for (File f : dir.listFiles()) {
-                    Log.e("file", f.getName());
+                    Log.d("file", f.getName());
                     if (!f.isDirectory()) {
                         try {
                             ExifInterface info = new ExifInterface(f.getAbsolutePath());
                             if (info != null) {
                                 String dateTime = info.getAttribute(ExifInterface.TAG_DATETIME);
                                 if (dateTime != null) {
-                                    Log.i("TAG_DATETIME", dateTime);
+                                    Log.d("TAG_DATETIME", dateTime);
                                     ImageDate imageDate = parseDateTimeTag(dateTime);
                                     File qDir = new File(cameraImageLocation + "/" + imageDate.getYear() + "-" + imageDate.getQuarter());
+                                    boolean newDirCreated = false;
                                     if (!qDir.exists()) {
-                                        qDir.mkdir();
+                                        Log.e(SORT_FOTO, "trying to make " + qDir.getAbsolutePath());
+                                        newDirCreated = qDir.mkdirs();
                                     } else if (!qDir.isDirectory()) {
                                         // TODO: enhance later - create a dir with a different name
                                         Log.e("mkqdir", "existing file name conflicts with " + qDir.getName());
                                         return;
                                     }
-                                    f.renameTo(new File(qDir.getAbsoluteFile() + "/" + f.getName()));
+                                    if (newDirCreated) {
+                                        Log.i(SORT_FOTO, "moving " + f.getName() + " to " + qDir.getName());
+                                        f.renameTo(new File(qDir.getAbsoluteFile() + "/" + f.getName()));
+                                        count++;
+                                    }
                                 }
                             }
                         } catch (IOException e) {
@@ -58,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 }
+                Log.i(SORT_FOTO, "moved " + count + " images!");
             }
         });
     }
