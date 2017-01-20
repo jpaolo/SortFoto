@@ -1,7 +1,10 @@
 package net.home.e46.sortfoto;
 
+import android.content.UriPermission;
 import android.media.ExifInterface;
 import android.os.Environment;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.provider.DocumentFile;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,6 +16,7 @@ import android.widget.Button;
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidParameterException;
+import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
@@ -46,11 +50,32 @@ public class MainActivity extends AppCompatActivity {
                                 if (dateTime != null) {
                                     Log.d("TAG_DATETIME", dateTime);
                                     ImageDate imageDate = parseDateTimeTag(dateTime);
-                                    File qDir = new File(cameraImageLocation + "/" + imageDate.getYear() + "-" + imageDate.getQuarter());
+                                    String path = cameraImageLocation + "/" + imageDate.getYear() + "-" + imageDate.getQuarter();
+
+                                    File[] dirs= ContextCompat.getExternalFilesDirs(getApplicationContext(), null);
+                                    Log.e("[0]", dirs[0].getAbsolutePath());
+                                    Log.e("[1]", dirs[1].getAbsolutePath());
+                                    path = dirs[1].getAbsolutePath() + "/../../../../DCIM/Camera" + "/" + imageDate.getYear() + "-" + imageDate.getQuarter();
+
+
+                                    Log.e("path", path);
+//                                    String path1 = Environment.getExternalStorageDirectory().getPath();
+//                                    String path2 = getApplicationContext().getFilesDir().getPath();
+//                                    Log.e("path1", path1);
+//                                    Log.e("path2", path2);
+//                                    String root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
+//                                    Log.e("root", root);
+//
+                                    File qDir = new File(path);
+                                    Log.e("real path=", qDir.getCanonicalPath());
                                     boolean newDirCreated = false;
                                     if (!qDir.exists()) {
                                         Log.e(SORT_FOTO, "trying to make " + qDir.getAbsolutePath());
+//                                        // dirty workaround for external sd card
+//                                        MediaFile mDir = new MediaFile(getApplicationContext().getContentResolver(), qDir);
                                         newDirCreated = qDir.mkdirs();
+                                        Log.e("dir creation", qDir.getName() + " is " + (newDirCreated? "" : "NOT ") + "created!");
+//                                        newDirCreated = qDir.mkdirs();
                                     } else if (!qDir.isDirectory()) {
                                         // TODO: enhance later - create a dir with a different name
                                         Log.e("mkqdir", "existing file name conflicts with " + qDir.getName());
@@ -58,8 +83,10 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                     if (newDirCreated) {
                                         Log.i(SORT_FOTO, "moving " + f.getName() + " to " + qDir.getName());
-                                        f.renameTo(new File(qDir.getAbsoluteFile() + "/" + f.getName()));
-                                        count++;
+                                        boolean moved = f.renameTo(new File(qDir.getAbsoluteFile() + "/" + f.getName()));
+                                        if (moved) {
+                                            count++;
+                                        }
                                     }
                                 }
                             }
@@ -67,8 +94,19 @@ public class MainActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
                     }
+                    break;  // temp code for debugging
                 }
                 Log.i(SORT_FOTO, "moved " + count + " images!");
+
+                List<UriPermission> permissions = getBaseContext().getContentResolver().getPersistedUriPermissions();
+                Log.e("permissions count", String.valueOf(permissions.size()));
+                for (UriPermission permission : permissions) {
+                    Log.e("permission", permission.toString());
+                    if (permission.isWritePermission()) {
+                        Log.e(permission.toString(), "writable");
+                    }
+                }
+
             }
         });
     }
